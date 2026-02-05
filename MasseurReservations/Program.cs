@@ -28,7 +28,8 @@ namespace MasseurReservations
                 Console.WriteLine("Press a number to select an option:");
                 Console.WriteLine("1. Make a reservation");
                 Console.WriteLine("2. View all reservations");
-                Console.WriteLine("3. Exit");
+                Console.WriteLine("3. Delete reservations");
+                Console.WriteLine("4. Exit");
                 Console.Write("> ");
                 string choice = Console.ReadLine();
                 if (choice == null)
@@ -46,6 +47,9 @@ namespace MasseurReservations
                         ViewReservations();
                         break;
                     case "3":
+                        DeleteReservation();
+                        break;
+                    case "4":
                         Console.WriteLine("Exiting the program.");
                         return;
                     default:
@@ -54,6 +58,146 @@ namespace MasseurReservations
                         break;
                 }
             }
+        }
+
+        // Orchestrator for deleting reservations
+        static void DeleteReservation()
+        {
+            Console.Clear();
+            Console.WriteLine("=== Delete Reservations ===");
+            Console.WriteLine("Would you like to find the reservation you wish to delete by [1] date or [2] name?");
+
+            int choice = ReadChoice(1, 2, "Choose 1 (date) or 2 (name): ");
+            if (choice == -1)
+            {
+                Console.WriteLine("Input closed. Returning to main menu.");
+                return;
+            }
+
+            if (choice == 1)
+                DeleteByDate();
+            else
+                DeleteByName();
+        }
+
+        static void DeleteByDate()
+        {
+            DateTime selectedDate;
+            while (true)
+            {
+                Console.Write("Please write the date in the following format dd.MM.yyyy: ");
+                string input = Console.ReadLine();
+                if (input == null)
+                {
+                    Console.WriteLine("Input closed. Returning to main menu.");
+                    return;
+                }
+                input = input.Trim();
+                if (DateTime.TryParseExact(input, "dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out selectedDate))
+                    break;
+
+                Console.WriteLine("Invalid date format. Please use dd.MM.yyyy.");
+            }
+
+            var matches = reservations.Where(r => r.Slot.Date == selectedDate.Date).OrderBy(r => r.Slot).ToList();
+            if (!matches.Any())
+            {
+                Console.WriteLine("No reservations for that date. Press Enter to continue.");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine("These are the reservations for that day, please select which one you would like to delete:");
+            for (int i = 0; i < matches.Count; i++)
+            {
+                var r = matches[i];
+                Console.WriteLine($"[{i + 1}] {r.Slot:HH:mm} {r.CustomerName}");
+            }
+
+            int pick = ReadChoice(1, matches.Count, "Choose a reservation to delete: ");
+            if (pick == -1)
+            {
+                Console.WriteLine("Input closed. Returning to main menu.");
+                return;
+            }
+
+            var toDelete = matches[pick - 1];
+            Console.WriteLine($"Do you wish to delete {toDelete.CustomerName}’s reservation at {toDelete.Slot:HH:mm} (Y/N)");
+            string? confirm = Console.ReadLine();
+            if (confirm == null)
+            {
+                Console.WriteLine("Input closed. Returning to main menu.");
+                return;
+            }
+            if (confirm.Trim().ToUpper() == "Y")
+            {
+                reservations.Remove(toDelete);
+                Console.WriteLine($"{toDelete.CustomerName}’s reservation at {toDelete.Slot:HH:mm} has been deleted. Press Enter to continue");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine("Deletion cancelled. Press Enter to continue.");
+            Console.ReadLine();
+        }
+
+        static void DeleteByName()
+        {
+            Console.Write("Please enter the customer name: ");
+            string? name = Console.ReadLine();
+            if (name == null)
+            {
+                Console.WriteLine("Input closed. Returning to main menu.");
+                return;
+            }
+            name = name.Trim();
+            if (string.IsNullOrEmpty(name))
+            {
+                Console.WriteLine("Name cannot be empty. Press Enter to continue.");
+                Console.ReadLine();
+                return;
+            }
+
+            var matches = reservations.Where(r => string.Equals(r.CustomerName, name, StringComparison.OrdinalIgnoreCase)).OrderBy(r => r.Slot).ToList();
+            if (!matches.Any())
+            {
+                Console.WriteLine("No reservations found for that name. Press Enter to continue.");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine("Matching reservations:");
+            for (int i = 0; i < matches.Count; i++)
+            {
+                var r = matches[i];
+                Console.WriteLine($"[{i + 1}] {r.Slot:HH:mm dd.MM.yyyy} {r.CustomerName}");
+            }
+
+            int pick = ReadChoice(1, matches.Count, "Choose a reservation to delete: ");
+            if (pick == -1)
+            {
+                Console.WriteLine("Input closed. Returning to main menu.");
+                return;
+            }
+
+            var toDelete = matches[pick - 1];
+            Console.WriteLine($"Do you wish to delete {toDelete.CustomerName}’s reservation at {toDelete.Slot:HH:mm} (Y/N)");
+            string? confirm = Console.ReadLine();
+            if (confirm == null)
+            {
+                Console.WriteLine("Input closed. Returning to main menu.");
+                return;
+            }
+            if (confirm.Trim().ToUpper() == "Y")
+            {
+                reservations.Remove(toDelete);
+                Console.WriteLine($"{toDelete.CustomerName}’s reservation at {toDelete.Slot:HH:mm} has been deleted. Press Enter to continue");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine("Deletion cancelled. Press Enter to continue.");
+            Console.ReadLine();
         }
 
         // Step: Prompt user to enter a date (dd.MM.yyyy), validate, choose a 30-min time slot between 08:00 and 15:00, check conflicts, and store reservation
@@ -170,19 +314,114 @@ namespace MasseurReservations
         static void ViewReservations()
         {
             Console.Clear();
-            Console.WriteLine("=== All Reservations ===");
+            Console.WriteLine("=== View Reservations ===");
+            Console.WriteLine("Would you like to find reservations by [1] date, [2] name, or [3] all?");
 
-            if (!reservations.Any())
+            int choice = ReadChoice(1, 3, "Choose 1 (date), 2 (name) or 3 (all): ");
+            if (choice == -1)
             {
-                Console.WriteLine("No reservations yet.");
+                Console.WriteLine("Input closed. Returning to main menu.");
+                return;
+            }
+
+            if (choice == 1)
+                ViewReservationsByDate();
+            else if (choice == 2)
+                ViewReservationsByName();
+            else
+            {
+                Console.Clear();
+                Console.WriteLine("=== All Reservations ===");
+                if (!reservations.Any())
+                {
+                    Console.WriteLine("No reservations yet.");
+                }
+                else
+                {
+                    var ordered = reservations.OrderBy(r => r.Slot);
+                    int i = 1;
+                    foreach (var r in ordered)
+                    {
+                        Console.WriteLine($"{i}. {r}");
+                        i++;
+                    }
+                }
+
+                Console.WriteLine("\nPress Enter to return to the main menu.");
+                Console.ReadLine();
+            }
+        }
+
+        static void ViewReservationsByDate()
+        {
+            DateTime selectedDate;
+            while (true)
+            {
+                Console.Write("Please write the date in the following format dd.MM.yyyy: ");
+                string input = Console.ReadLine();
+                if (input == null)
+                {
+                    Console.WriteLine("Input closed. Returning to main menu.");
+                    return;
+                }
+                input = input.Trim();
+                if (DateTime.TryParseExact(input, "dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out selectedDate))
+                    break;
+
+                Console.WriteLine("Invalid date format. Please use dd.MM.yyyy.");
+            }
+
+            var matches = reservations.Where(r => r.Slot.Date == selectedDate.Date).OrderBy(r => r.Slot).ToList();
+            Console.Clear();
+            Console.WriteLine($"=== Reservations for {selectedDate:dd.MM.yyyy} ===");
+            if (!matches.Any())
+            {
+                Console.WriteLine("No reservations for that date.");
             }
             else
             {
-                var ordered = reservations.OrderBy(r => r.Slot);
                 int i = 1;
-                foreach (var r in ordered)
+                foreach (var r in matches)
                 {
-                    Console.WriteLine($"{i}. {r}");
+                    Console.WriteLine($"{i}. {r.Slot:HH:mm} {r.CustomerName}");
+                    i++;
+                }
+            }
+
+            Console.WriteLine("\nPress Enter to return to the main menu.");
+            Console.ReadLine();
+        }
+
+        static void ViewReservationsByName()
+        {
+            Console.Write("Please enter the customer name: ");
+            string? name = Console.ReadLine();
+            if (name == null)
+            {
+                Console.WriteLine("Input closed. Returning to main menu.");
+                return;
+            }
+            name = name.Trim();
+            if (string.IsNullOrEmpty(name))
+            {
+                Console.WriteLine("Name cannot be empty. Press Enter to continue.");
+                Console.ReadLine();
+                return;
+            }
+
+            var matches = reservations.Where(r => r.CustomerName != null && string.Equals(r.CustomerName, name, StringComparison.OrdinalIgnoreCase)).OrderBy(r => r.Slot).ToList();
+            Console.Clear();
+            Console.WriteLine($"=== Reservations for '{name}' ===");
+            if (!matches.Any())
+            {
+                Console.WriteLine("No reservations found for that name.");
+            }
+            else
+            {
+                int i = 1;
+                foreach (var r in matches)
+                {
+                    Console.WriteLine($"{i}. {r.Slot:HH:mm dd.MM.yyyy} {r.CustomerName}");
                     i++;
                 }
             }
