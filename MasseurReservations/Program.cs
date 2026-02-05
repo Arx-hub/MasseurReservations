@@ -95,12 +95,15 @@ namespace MasseurReservations
                 Console.WriteLine("Invalid date format or non-existent date. Please use dd.MM.yyyy and ensure the date exists (e.g., April has 30 days).");
             }
 
-            // Generate 30-minute time slots from 08:00 to 15:00
-            TimeSpan start = new TimeSpan(8, 0, 0);
-            TimeSpan end = new TimeSpan(15, 0, 0);
-            List<TimeSpan> times = new List<TimeSpan>();
-            for (TimeSpan t = start; t <= end; t = t.Add(TimeSpan.FromMinutes(30)))
-                times.Add(t);
+            // Generate available 30-minute start times for 1-hour appointments
+            List<TimeSpan> times = GetAvailableStartTimesForDate(selectedDate);
+
+            if (!times.Any())
+            {
+                Console.WriteLine("No available times for that date. Press Enter to continue.");
+                Console.ReadLine();
+                return;
+            }
 
             Console.WriteLine("Available times:");
             for (int i = 0; i < times.Count; i++)
@@ -141,10 +144,10 @@ namespace MasseurReservations
                 return;
             }
 
-            // Check for conflicts
-            if (reservations.Any(r => r.Slot == slot))
+            // Check for conflicts (overlap with any existing 1-hour reservation)
+            if (!IsSlotAvailable(slot))
             {
-                Console.WriteLine("Sorry, that time slot is already taken. Press Enter to continue.");
+                Console.WriteLine("Sorry, that time overlaps an existing reservation. Press Enter to continue.");
                 Console.ReadLine();
                 return;
             }
@@ -221,6 +224,49 @@ namespace MasseurReservations
 
                 Console.WriteLine($"Please enter a number between {min} and {max}.");
             }
+        }
+
+        // Appointment duration (1 hour) used by new scheduling logic
+        static readonly TimeSpan AppointmentDuration = TimeSpan.FromHours(1);
+
+        // Generate potential 30-minute start times such that a 1-hour appointment fits within business hours (08:00-15:00)
+        static List<TimeSpan> GeneratePotentialStartTimes()
+        {
+            TimeSpan start = new TimeSpan(8, 0, 0);
+            TimeSpan end = new TimeSpan(15, 0, 0);
+            TimeSpan lastStart = end - AppointmentDuration; // last allowed start so appointment ends by business end
+            List<TimeSpan> times = new List<TimeSpan>();
+            for (TimeSpan t = start; t <= lastStart; t = t.Add(TimeSpan.FromMinutes(30)))
+                times.Add(t);
+            return times;
+        }
+
+        // Return available start times for a given date, excluding any starts that would overlap existing 1-hour reservations
+        static List<TimeSpan> GetAvailableStartTimesForDate(DateTime date)
+        {
+            var potentials = GeneratePotentialStartTimes();
+            var available = new List<TimeSpan>();
+            foreach (var ts in potentials)
+            {
+                DateTime candidateStart = date.Date + ts;
+                bool overlaps = reservations.Any(r => r.Slot.Date == date.Date &&
+                    IntervalsOverlap(r.Slot, r.Slot + AppointmentDuration, candidateStart, candidateStart + AppointmentDuration));
+                if (!overlaps)
+                    available.Add(ts);
+            }
+            return available;
+        }
+
+        // Check if a candidate start time is available (no overlap with existing 1-hour reservations)
+        static bool IsSlotAvailable(DateTime candidateStart)
+        {
+            return !reservations.Any(r => IntervalsOverlap(r.Slot, r.Slot + AppointmentDuration, candidateStart, candidateStart + AppointmentDuration));
+        }
+
+        // Helper: determine if two half-open intervals [aStart,aEnd) and [bStart,bEnd) overlap
+        static bool IntervalsOverlap(DateTime aStart, DateTime aEnd, DateTime bStart, DateTime bEnd)
+        {
+            return aStart < bEnd && bStart < aEnd;
         }
     }
 }
