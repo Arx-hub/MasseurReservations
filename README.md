@@ -1,5 +1,5 @@
 Description:
-  This program is used to reserve appointments at a masseur. In the program the user is welcome with two options, create a reservation, cancel an appointment or exit the program.
+  This program is used to reserve appointments at a masseur. In the program the user is welcome with three options, create a reservation, cancel an appointment or exit the program.
   When creating a reservation the program will ask from the user the year, month and specific day they would like to make a reservation on. 
   In return the program will provide the available times for that specific day. The user will not be able to choose or even see the times that are already taken. So, the program will make sure that appointments dont overlap.
   The user will also be asked to provide their name and upon completion of the reservation, a confirmation page will appear showing the specific date, time and name that has been chosen for the appointment. 
@@ -13,5 +13,6 @@ What it can't do:
 
 Development:
   The program is built in a simple manner. Its entirely based in C#. It is created with AI under the supervision of the creators. 
+
 
 
