@@ -5,11 +5,14 @@ using System.Globalization;
 
 namespace MasseurReservations
 {
-    // Simple reservation model holding the reserved DateTime
+    // Simple reservation model holding the reserved DateTime and an optional customer name
     class Reservation
     {
         public DateTime Slot { get; set; }
-        public override string ToString() => Slot.ToString("HH:mm dd.MM.yyyy");
+        public string CustomerName { get; set; } = string.Empty;
+        public override string ToString() => string.IsNullOrWhiteSpace(CustomerName)
+            ? Slot.ToString("HH:mm dd.MM.yyyy")
+            : $"{Slot:HH:mm dd.MM.yyyy} - {CustomerName}";
     }
 
     class ReservationSystem
@@ -146,8 +149,16 @@ namespace MasseurReservations
                 return;
             }
 
-            // Add reservation
-            reservations.Add(new Reservation { Slot = slot });
+            // Ask for the customer's name and store it with the reservation
+            string? customerName = AskForCustomerName();
+            if (customerName == null)
+            {
+                Console.WriteLine("Input closed. Returning to main menu.");
+                return;
+            }
+
+            // Add reservation with name
+            reservations.Add(new Reservation { Slot = slot, CustomerName = customerName });
             Console.WriteLine("Reservation created successfully! Press Enter to continue.");
             Console.ReadLine();
         }
@@ -175,6 +186,24 @@ namespace MasseurReservations
 
             Console.WriteLine("\nPress Enter to return to the main menu.");
             Console.ReadLine();
+        }
+
+        // Prompt for customer name after selecting and confirming a time slot.
+        // Returns the entered name trimmed, returns null if the input stream was closed.
+        static string? AskForCustomerName()
+        {
+            while (true)
+            {
+                Console.Write("Enter customer name: ");
+                string name = Console.ReadLine();
+                if (name == null)
+                    return null;
+                name = name.Trim();
+                if (!string.IsNullOrEmpty(name))
+                    return name;
+
+                Console.WriteLine("Name cannot be empty. Please enter a valid name.");
+            }
         }
 
         // Helper: read an integer choice within a range with validation

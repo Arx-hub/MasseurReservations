@@ -40,3 +40,4 @@ Already NOT what we asked for. So we wrote this:
 Change the date format to hh:mm dd.mm.yyyy. When making a reservation its supposed to ask the user for a date, not give the 3 date options that you wrote right now. it should allow dates that range 2 years in advance, and also not allow past dates. it should also take into consideration that some months only have 30 days and also the month should be written in double digits and the year in 4 digits. The time span should be displayed in 30 minute intervals from 8 am to 3 pm.
 
 Note: Maybe the presantation wasn't to the AI's liking and that's why the AI started doing it differently with the dates and hours.
+------------------------------------------------
