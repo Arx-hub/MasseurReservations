@@ -28,6 +28,11 @@ namespace MasseurReservations
                 Console.WriteLine("3. Exit");
                 Console.Write("> ");
                 string choice = Console.ReadLine();
+                if (choice == null)
+                {
+                    Console.WriteLine("Input closed. Exiting.");
+                    return;
+                }
 
                 switch (choice)
                 {
@@ -62,7 +67,13 @@ namespace MasseurReservations
             while (true)
             {
                 Console.Write("Date (dd.MM.yyyy): ");
-                string dateInput = Console.ReadLine().Trim();
+                string dateInput = Console.ReadLine();
+                if (dateInput == null)
+                {
+                    Console.WriteLine("Input closed. Returning to main menu.");
+                    return;
+                }
+                dateInput = dateInput.Trim();
                 if (DateTime.TryParseExact(dateInput, "dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out selectedDate))
                 {
                     if (selectedDate < today)
@@ -95,6 +106,11 @@ namespace MasseurReservations
             }
 
             int timeChoice = ReadChoice(1, times.Count, "Choose a time: ");
+            if (timeChoice == -1)
+            {
+                Console.WriteLine("Input closed. Returning to main menu.");
+                return;
+            }
             TimeSpan selectedTime = times[timeChoice - 1];
 
             DateTime slot = selectedDate.Date + selectedTime;
@@ -108,7 +124,13 @@ namespace MasseurReservations
             }
 
             Console.WriteLine($"You selected {slot:HH:mm dd.MM.yyyy}. Confirm? (Y/N)");
-            string confirm = Console.ReadLine().Trim().ToUpper();
+            string confirm = Console.ReadLine();
+            if (confirm == null)
+            {
+                Console.WriteLine("Input closed. Returning to main menu.");
+                return;
+            }
+            confirm = confirm.Trim().ToUpper();
             if (confirm != "Y")
             {
                 Console.WriteLine("Reservation cancelled. Press Enter to continue.");
@@ -161,7 +183,10 @@ namespace MasseurReservations
             while (true)
             {
                 Console.Write(prompt);
-                string input = Console.ReadLine().Trim();
+                string input = Console.ReadLine();
+                if (input == null)
+                    return -1;
+                input = input.Trim();
                 if (int.TryParse(input, out int choice) && choice >= min && choice <= max)
                     return choice;
 
